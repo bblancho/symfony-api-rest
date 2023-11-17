@@ -18,7 +18,7 @@ class ApiLoginController extends AbstractController
      * @return Response
      * @throws BadRequestHttpException
      */
-    public function apiLogin( #[CurrentUser] ?User $user): Response
+    public function apiLogin( #[CurrentUser] ?User $user): JsonResponse
     {
         $user = $this->getUser() ;
 

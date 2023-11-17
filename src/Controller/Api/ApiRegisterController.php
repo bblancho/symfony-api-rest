@@ -8,12 +8,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ApiRegisterController extends AbstractController
 {
@@ -23,39 +22,36 @@ class ApiRegisterController extends AbstractController
      * @return Response
      * @throws BadRequestHttpException
      */
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, UserAuthenticatorInterface $userAuthenticator, SecurityAuthenticator $authenticator, EntityManagerInterface $entityManager): Response
+    public function register( SerializerInterface $serializer, ValidatorInterface $validator , Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): JsonResponse
     {
         if ( $this->getUser() ){
-            return new JsonResponse($user_data, Response::HTTP_OK) ;
+            return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous déconnecter pour accèder à cette page"], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
         }
 
-        $user = new User();
-        $form = $this->createForm(RegistrationFormType::class, $user);
-        $form->handleRequest($request);
+        // On convertit nos données json => Objet Php de type user
+        $newUser = $serializer->deserialize( $request->getContent(), User::class, 'json' ) ;
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            // encode the plain password
-            $user->setPassword(
-                $userPasswordHasher->hashPassword(
-                    $user,
-                    $form->get('password')->getData()
-                )
-            );
+        $errors = $validator->validate($newUser) ;
 
-            $entityManager->persist($user);
-            $entityManager->flush();
-            // do anything else you need here, like send an email
-
-            return $userAuthenticator->authenticateUser(
-                $user,
-                $authenticator,
-                $request
-            );
+        if( count($errors) > 0 ){
+            // On convertit nos données PHP => Json
+            return new JsonResponse( $serializer->serialize( $errors, 'json') , Response::HTTP_BAD_REQUEST, [], true ) ;
         }
 
-        return $this->render('registration/register.html.twig', [
-            'registrationForm' => $form->createView(),
-        ]);
+        $getPassowrd = $newUser->getPassword() ;
+        
+        // encode the plain password
+        $newUser->setPassword(
+            $userPasswordHasher->hashPassword(
+                $newUser, // ligne 35
+                $getPassowrd
+            )
+        );
+
+        $entityManager->persist($newUser);
+        $entityManager->flush();
+
+        return new JsonResponse( $serializer->serialize( ['message' => " Votre compte a bien été créé. "], 'json') , Response::HTTP_OK, ['accept' =>"application/json"], true ) ;
     }
 
 }
