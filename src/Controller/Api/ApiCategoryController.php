@@ -18,6 +18,21 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class ApiCategoryController extends AbstractController
 {
+    #[Route(path:"/api/category", name: 'api_category_index', methods: ['GET'])]
+    public function apiCategoryIndexe(SerializerInterface $serializer, CategoryRepository $catRepository): JsonResponse
+    {
+        if ( !$this->getUser() ){
+            return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page"], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
+        }
+        
+        $categories = $catRepository->findAll() ;
+
+        $jsonCategories = $serializer->serialize( $categories , 'json') ;
+
+        return new JsonResponse( $jsonCategories, Response::HTTP_OK, ['accept' =>"application/json"], true)  ;
+    }
+
+
     #[Route('/api/category/new', name: 'api_category_add', methods: ['POST'])]
     /**
      * @return Response
@@ -49,9 +64,13 @@ class ApiCategoryController extends AbstractController
         if ( !$this->getUser() ){
             return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page"], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
         }
-
+        
         $catRepository = $entityManager->getRepository(Category::class);
         $category = $catRepository->find($id) ;
+
+        if ( !$category ){
+            return new JsonResponse( $serializer->serialize( ['message' => "La catégorie n'existe pas"], 'json') , Response::HTTP_NOT_FOUND, [], true ) ;
+        }
 
         $entityManager->remove($category) ;
         $entityManager->flush() ;
