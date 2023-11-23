@@ -32,7 +32,6 @@ class ApiCategoryController extends AbstractController
         return new JsonResponse( $jsonCategories, Response::HTTP_OK, ['accept' =>"application/json"], true)  ;
     }
 
-
     #[Route('/api/category/new', name: 'api_category_add', methods: ['POST'])]
     /**
      * @return Response
@@ -58,11 +57,41 @@ class ApiCategoryController extends AbstractController
         return new JsonResponse( $serializer->serialize( ['message' => " La categorie $nom a bien été créé. "], 'json') , Response::HTTP_OK, ['accept' =>"application/json"], true ) ;
     }
 
+    #[Route(path:"/api/category/{id}/update", name: 'api_category_update', methods: ['PUT'])]
+    public function apiUpdateCategory($id, SerializerInterface $serializer, ValidatorInterface $validator ,  Request $request, CategoryRepository $catRepository, EntityManagerInterface $entityManager): JsonResponse
+    {
+        if ( !$this->getUser() ){
+            return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page."], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
+        }
+        
+        // Json -> objet PHP
+        $category = $serializer->deserialize( $request->getContent(), Category::class, 'json' ) ; 
+
+        $errors = $validator->validate($category) ;
+
+        if( count($errors) > 0 ){
+            // On convertit nos données PHP => Json
+            return new JsonResponse( $serializer->serialize( $errors, 'json') , Response::HTTP_BAD_REQUEST, [], true ) ;
+        }
+
+        $categoryBDD = $catRepository->find($id) ;
+
+        if ( !$categoryBDD ){
+            return new JsonResponse( $serializer->serialize( ['message' => "La catégorie n'existe pas."], 'json') , Response::HTTP_NOT_FOUND, [], true ) ;
+        }
+
+        $categoryBDD->setNom( $category->getNom() ) ;
+
+        $entityManager->flush();
+
+        return new JsonResponse( $serializer->serialize( ['message' => "La catégorie a bien été mise à jour."], 'json') , Response::HTTP_OK, ['accept' =>"application/json"] , true ) ;
+    }
+
     #[Route(path:"/api/category/{id}/delete", name: 'api_category_delete', methods: ['DELETE'])]
     public function apiDeleteCategory($id, SerializerInterface $serializer, EntityManagerInterface $entityManager): JsonResponse
     {
         if ( !$this->getUser() ){
-            return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page"], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
+            return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page."], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
         }
         
         $catRepository = $entityManager->getRepository(Category::class);
