@@ -19,7 +19,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 class ApiCategoryController extends AbstractController
 {
     #[Route(path:"/api/category", name: 'api_category_index', methods: ['GET'])]
-    public function apiCategoryIndexe(SerializerInterface $serializer, CategoryRepository $catRepository): JsonResponse
+    public function indexCategory(SerializerInterface $serializer, CategoryRepository $catRepository): JsonResponse
     {
         if ( !$this->getUser() ){
             return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page"], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
@@ -37,9 +37,9 @@ class ApiCategoryController extends AbstractController
      * @return Response
      * @throws BadRequestHttpException
      */
-    public function apiAddCategory( SerializerInterface $serializer, ValidatorInterface $validator , Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function addCategory( SerializerInterface $serializer, ValidatorInterface $validator , Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        // On convertit nos données json => Objet Php de type user
+        // On convertit nos données json => Objet Php de type Category
         $category = $serializer->deserialize( $request->getContent(), Category::class, 'json' ) ;
 
         $errors = $validator->validate($category) ;
@@ -54,16 +54,16 @@ class ApiCategoryController extends AbstractController
         $entityManager->persist($category) ;
         $entityManager->flush();
 
-        return new JsonResponse( $serializer->serialize( ['message' => " La categorie $nom a bien été créé. "], 'json') , Response::HTTP_OK, ['accept' =>"application/json"], true ) ;
+        return new JsonResponse( $serializer->serialize( ['message' => " La categorie $nom a bien été créé. "], 'json') , Response::HTTP_CREATED, ['accept' =>"application/json"], true ) ;
     }
 
     #[Route(path:"/api/category/{id}/update", name: 'api_category_update', methods: ['PUT'])]
-    public function apiUpdateCategory($id, SerializerInterface $serializer, ValidatorInterface $validator ,  Request $request, CategoryRepository $catRepository, EntityManagerInterface $entityManager): JsonResponse
+    public function updateCategory($id, SerializerInterface $serializer, ValidatorInterface $validator ,  Request $request, CategoryRepository $catRepository, EntityManagerInterface $entityManager): JsonResponse
     {
         if ( !$this->getUser() ){
             return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page."], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
         }
-        
+
         // Json -> objet PHP
         $category = $serializer->deserialize( $request->getContent(), Category::class, 'json' ) ; 
 
@@ -80,6 +80,7 @@ class ApiCategoryController extends AbstractController
             return new JsonResponse( $serializer->serialize( ['message' => "La catégorie n'existe pas."], 'json') , Response::HTTP_NOT_FOUND, [], true ) ;
         }
 
+        // Maj de la data
         $categoryBDD->setNom( $category->getNom() ) ;
 
         $entityManager->flush();
@@ -88,13 +89,12 @@ class ApiCategoryController extends AbstractController
     }
 
     #[Route(path:"/api/category/{id}/delete", name: 'api_category_delete', methods: ['DELETE'])]
-    public function apiDeleteCategory($id, SerializerInterface $serializer, EntityManagerInterface $entityManager): JsonResponse
+    public function deleteCategory($id, SerializerInterface $serializer, CategoryRepository $catRepository, EntityManagerInterface $entityManager): JsonResponse
     {
         if ( !$this->getUser() ){
             return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page."], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
         }
         
-        $catRepository = $entityManager->getRepository(Category::class);
         $category = $catRepository->find($id) ;
 
         if ( !$category ){
