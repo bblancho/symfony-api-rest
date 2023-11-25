@@ -8,6 +8,7 @@ use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
 use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\Serializer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -19,35 +20,18 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class ApiArticleController extends AbstractController
 {
-    ##[Route('/api/articles', name: 'api_article_index', methods: ['GET'])]
+    #[Route(path: '/api/articles', name: 'api_article_index', methods: ['GET'])]
     /**
      * @return JsonResponse
      * @throws BadRequestHttpException
      */
-    // public function apiArticleIndex(): JsonResponse
-    // {
-    //     $user = $this->getUser() ;
-
-    //     if (is_null($user)) {
-    //         return $this->json( ['message' => "Mauvais identifiant ", ], Response::HTTP_UNAUTHORIZED);
-    //     }
+    public function apiArticleIndex(SerializerInterface $serializer, ArticleRepository $articleRepository): JsonResponse
+    {
         
-    //     $user_data = [
-    //         'email' => $user->getEmail() ,
-    //         'nom'   => $user->getNom() ,
-    //         'prenom'=> $user->getPrenom() ,
-    //     ] ;
+        $articles = $articleRepository->findAll() ;
 
-    //     return new JsonResponse($user_data, Response::HTTP_OK) ;
-    //     //return $this->json($user_data) ;
-    // }
-
-
-    ##[Route('/api/article/{id}/show', name: 'api_article_show', methods: ['GET'])]
-    /**
-     * @return JsonResponse
-     * @throws BadRequestHttpException
-     */
+        return new JsonResponse($serializer->serialize($articles, 'json'), Response::HTTP_OK, ['accept' => "application/json"], true) ;
+    }
 
     
     #[Route(path: '/api/category/{id}/article/new', name: 'api_article_new', methods: ['POST'])]
