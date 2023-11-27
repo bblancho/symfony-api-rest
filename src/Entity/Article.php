@@ -25,10 +25,12 @@ class Article
 
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['getArticles'])]
     private ?Category $catgory = null;
 
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['getArticles'])]
     private ?User $user = null;
 
     public function getId(): ?int
