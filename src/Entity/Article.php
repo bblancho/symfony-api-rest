@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ArticleRepository;
 use Doctrine\DBAL\Types\Types;
+use JMS\Serializer\Annotation\Groups;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
@@ -12,9 +13,11 @@ class Article
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['getArticles'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['getArticles'])]
     private ?string $nom = null;
 
     #[ORM\Column(type: Types::TEXT)]

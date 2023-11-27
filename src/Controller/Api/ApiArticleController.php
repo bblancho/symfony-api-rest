@@ -18,6 +18,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use JMS\Serializer\SerializationContext;
 
 class ApiArticleController extends AbstractController
 {
@@ -55,8 +56,10 @@ class ApiArticleController extends AbstractController
             'number_page_number'  => $dataParPages->getItemNumberPerPage() ,
             'total_account'       => $dataParPages->getTotalItemCount() ,
         ] ;
+        
+        $context = SerializationContext::create()->setGroups('getArticles') ;
 
-        $articlesJson = $serializer->serialize($getData, 'json') ;
+        $articlesJson = $serializer->serialize($getData, 'json', $context) ;
         //dd($getData) ;
 
         return new JsonResponse( $articlesJson , Response::HTTP_OK, ['accept' => "application/json"], true) ;
