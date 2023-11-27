@@ -31,13 +31,35 @@ class ApiArticleController extends AbstractController
         // Méthode findBy qui permet de récupérer les données avec des critères de filtre et de tri
         $data = $articleRepository->findBy( [], ['id' => 'desc'] ) ;
 
-        $articles = $paginator->paginate(
+        // Objet knpPaginator
+        $dataParPages = $paginator->paginate(
             $data, // Requête contenant les données à paginer (ici nos articles)
             $request->query->getInt('page', 1), // Numéro de la page en cours, passé dans l'URL, 1 si aucune page
-            3 // Nombre de résultats par page
+            4 // Nombre de résultats par page
         );
 
-        return new JsonResponse( $serializer->serialize($articles, 'json') , Response::HTTP_OK, ['accept' => "application/json"], true) ;
+        $data = [] ;
+
+        foreach($dataParPages->getItems() as $key => $value ){
+            $dataItems =[
+                'article' => $value
+            ]  ;
+
+            $data[] = $dataItems ;
+        }
+
+        // On récupère seulement les éléments dont a besoin dans knpPaginator
+        $getData = [
+            'data' => $data ,
+            'current_page_number' => $dataParPages->getCurrentPageNumber() ,
+            'number_page_number'  => $dataParPages->getItemNumberPerPage() ,
+            'total_account'       => $dataParPages->getTotalItemCount() ,
+        ] ;
+
+        $articlesJson = $serializer->serialize($getData, 'json') ;
+        //dd($getData) ;
+
+        return new JsonResponse( $articlesJson , Response::HTTP_OK, ['accept' => "application/json"], true) ;
     }
 
     
