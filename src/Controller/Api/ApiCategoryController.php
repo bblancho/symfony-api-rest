@@ -39,6 +39,10 @@ class ApiCategoryController extends AbstractController
      */
     public function addCategory( SerializerInterface $serializer, ValidatorInterface $validator , Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
+        if ( !$this->getUser() ){
+            return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page."], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
+        }
+
         // On convertit nos données json => Objet Php de type Category
         $category = $serializer->deserialize( $request->getContent(), Category::class, 'json' ) ;
 

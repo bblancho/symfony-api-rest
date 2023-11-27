@@ -4,11 +4,12 @@ namespace App\Controller\Api;
 
 use App\Entity\User;
 use App\Entity\Article;
+use JMS\Serializer\Serializer;
 use App\Repository\ArticleRepository;
 use App\Repository\CategoryRepository;
 use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use JMS\Serializer\Serializer;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -25,12 +26,18 @@ class ApiArticleController extends AbstractController
      * @return JsonResponse
      * @throws BadRequestHttpException
      */
-    public function apiArticleIndex(SerializerInterface $serializer, ArticleRepository $articleRepository): JsonResponse
+    public function apiArticleIndex(SerializerInterface $serializer, ArticleRepository $articleRepository, PaginatorInterface $paginator, Request $request): JsonResponse
     {
-        
-        $articles = $articleRepository->findAll() ;
+        // Méthode findBy qui permet de récupérer les données avec des critères de filtre et de tri
+        $data = $articleRepository->findBy( [], ['id' => 'desc'] ) ;
 
-        return new JsonResponse($serializer->serialize($articles, 'json'), Response::HTTP_OK, ['accept' => "application/json"], true) ;
+        $articles = $paginator->paginate(
+            $data, // Requête contenant les données à paginer (ici nos articles)
+            $request->query->getInt('page', 1), // Numéro de la page en cours, passé dans l'URL, 1 si aucune page
+            3 // Nombre de résultats par page
+        );
+
+        return new JsonResponse( $serializer->serialize($articles, 'json') , Response::HTTP_OK, ['accept' => "application/json"], true) ;
     }
 
     
