@@ -84,6 +84,8 @@ class ApiArticleController extends AbstractController
             return new JsonResponse( $serializer->serialize( ['message' => "Veuillez vous connecter pour accèder à cette page."], 'json') , Response::HTTP_UNAUTHORIZED, [], true ) ;
         }
 
+        $dataRequest = $request->toArray() ;
+
         // On convertit nos données json => Objet Php de type Category
         $article = $serializer->deserialize( $request->getContent(), Article::class, 'json' ) ;
 
